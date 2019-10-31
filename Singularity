@@ -37,7 +37,6 @@ From: ubuntu:16.04
       libatlas-base-dev \
       liblapack3 \
       libblas3 \
-      libblas-dev \
       libcminpack-dev \
       libgfortran3 \
       libmetis-edf-dev \
