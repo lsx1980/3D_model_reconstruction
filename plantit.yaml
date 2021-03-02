@@ -1,0 +1,27 @@
+name: DIRT3D Reconstruction
+author: Suxing Liu
+image: docker://computationalplantscience/3d-model-reconstruction:cuda
+public: True
+commands: /vsfm/shim.sh "$INPUT"
+mount:
+- /vsfm/bin/temp
+- /vsfm/bin/log
+input:
+  path:
+  kind: directory
+  filetypes:
+    - jpg
+    - png
+output:
+  path:
+  include:
+    patterns:
+      - nvm
+      - ply
+logo: Root3D.png
+gpu: True
+resources:
+  time: "24:00:00"
+  mem: "20GB"
+  processes: 1
+  cores: 12

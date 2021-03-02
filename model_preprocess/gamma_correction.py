@@ -9,7 +9,7 @@ Author-email: suxingliu@gmail.com
 
 USAGE:
 
-python gamma_correction.py -p /home/suxingliu/model-scan/test-image/ -ft jpg 
+python3 gamma_correction.py -p /home/suxingliu/model-scan/test-image/ -ft jpg 
 
 
 argument:
@@ -160,7 +160,8 @@ if __name__ == '__main__':
 
     # make the folder to store the results
     parent_path = os.path.abspath(os.path.join(file_path, os.pardir))
-    mkpath = parent_path + '/' + str('gamma_correction')
+    #mkpath = parent_path + '/' + str('gamma_correction')
+    mkpath = file_path + '/' + str('gamma_correction')
     mkdir(mkpath)
     save_path = mkpath + '/'
 
@@ -169,7 +170,7 @@ if __name__ == '__main__':
     
     # get cpu number for parallel processing
     #agents = psutil.cpu_count()   
-    agents = multiprocessing.cpu_count()-2
+    agents = multiprocessing.cpu_count()-1
     
 
     print("Using {0} cores to perfrom parallel processing... \n".format(int(agents)))

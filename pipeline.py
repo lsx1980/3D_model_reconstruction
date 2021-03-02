@@ -1,7 +1,7 @@
 """
-Version: 1.5
+Version: 1.0
 
-Summary: 3D model reconstruction based on automaticly extracted ROI and gamma correction image set
+Summary: pipeline of colmap and visualSFM for 3D model reconstruction from images
 
 Author: suxing liu
 
@@ -9,89 +9,104 @@ Author-email: suxingliu@gmail.com
 
 USAGE:
 
-python pipeline.py -p /path_to_image_folder/ -ft jpg
+python3 colmap_pipeline.py 
 
-parameter list:
 
 argument:
 ("-p", "--path", required = True,    help = "path to image file")
-("-ft", "--filetype", required = True,    help = "Image filetype")
 
+
+Note:
+GPU related parameters
+--SiftExtraction.use_gpu 
+--SiftMatching.use_gpu
 
 """
 
 import subprocess, os
 import sys
+
 import argparse
+import glob
+import fnmatch
+import os, os.path
 
 
-
-def execute_script(cmd_line):
-    """execute script inside program"""
+def execute_script(command):
     
-    process = subprocess.Popen(cmd_line, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-    # Poll process for new output until finished
-    while True:
-        nextline = process.stdout.readline()
-        if nextline == '' and process.poll() is not None:
-            break
-        sys.stdout.write(nextline)
-        sys.stdout.flush()
-
-    output = process.communicate()[0]
-    exitCode = process.returncode
-
-    if (exitCode == 0):
-        return output
-    else:
-        raise ProcessException(cmd_line, exitCode, output)
-   
+    try:
+        print(command)
+        print()
+        subprocess.run(command, shell = True)
         
-
-
-
-def pipeline(current_path):
-    """execute pipeline scripts"""
-    
-    #/opt/code/bbox_seg.py -p /home/suxingliu/frame-interpolation/test-image/ -ft jpg
-    
-    # step 1 : Region of Interest extraction
-    ROI_seg = "python /opt/code/bbox_seg.py -p " + current_path + " -ft " + str(ext)
-    
-    print("Extracting Region of Interest from input images...\n")
-    
-    execute_script(ROI_seg)
+    except OSError:
+        
+        print("Failed ...!\n")
 
     
-    # step 2 : gamma_correction 
-    #gamma_correction = "python /opt/code/gamma_correction.py -p " + current_path + "segmented/" 
-    
-    #print("Luminance enhancement by gamma_correction method...\n")
-    
-    #execute_script(gamma_correction)
-    
-    # step 3: compute 3D model from preprocessed image set
-    compute_3d_model = "/opt/code/vsfm/bin/VisualSFM sfm+pmvs " + current_path + "segmented/" 
-    
-    #singularity exec --overlay file.img shub://lsx1980/vsfm-master /opt/code/vsfm/bin/VisualSFM sfm+pmvs /$root/$path_to_your_image_file_folder/
-    execute_script(compute_3d_model)
 
+def colmap_vsfm_pipeline(file_path):
+    
+    currentDirectory = os.getcwd()
+    print(currentDirectory)
+    
+    if os.path.exists(file_path):
+        print("Image files path exist...\n")
+    else:
+        print("Image files path was not valid!\n")
+
+    feature_extract = "colmap feature_extractor --image_path " + file_path + " --database_path " + file_path + "/database.db " + "--SiftExtraction.use_gpu=false"
+    execute_script(feature_extract)
+    
+    feature_matching = "colmap exhaustive_matcher --database_path " + file_path + "/database.db" + " --SiftMatching.use_gpu=false"
+    execute_script(feature_matching)
+    
+    create_folder_sparse = "mkdir " + file_path + "/sparse" 
+    execute_script(create_folder_sparse)
+    
+    sparse_model = "colmap mapper --database_path " + file_path + "/database.db " + "--image_path " + file_path + " --output_path " + file_path + "/sparse" 
+    execute_script(sparse_model)
+    
+    nvm_model = "colmap model_converter --input_path " + file_path + "/sparse/0 " + " --output_path " + file_path + "/model.nvm " + " --output_type NVM"
+    execute_script(nvm_model)
+    
+    dense_model = "/opt/code/vsfm/bin/VisualSFM sfm+loadnvm+pmvs " + file_path + "/model.nvm " + file_path + "/dense.nvm "
+    execute_script(dense_model)
+    
+    
+    '''
+    #reserved for future GPU version
+    create_folder_dense = "mkdir " + file_path + "/dense" 
+    execute_script(create_folder_dense)
+    
+    #GPU required
+    dense_model = "colmap image_undistorter --image_path "+ file_path + " --input_path " + file_path + "/sparse/0 --output_path " + file_path + "/dense --output_type COLMAP --max_image_size 2000"
+    execute_script(dense_model)
+    
+    
+    patch_match_stereo = "colmap patch_match_stereo --workspace_path " + file_path + "/dense" + " --workspace_format COLMAP --PatchMatchStereo.geom_consistency true"
+    execute_script(patch_match_stereo)
+    
+    stereo_fusion = "colmap stereo_fusion --workspace_path " + file_path + "/dense" + " --workspace_format COLMAP --input_type geometric --output_path " + file_path + "/dense/fused.ply"
+    execute_script(stereo_fusion)
+    
+    poisson_mesher = " colmap poisson_mesher --input_path " + file_path + "/dense/fused.ply" + " --output_path " + file_path +"/dense/meshed-poisson.ply"
+    execute_script(poisson_mesher)
+    '''
+    
+    
 
 if __name__ == '__main__':
-    
+
     # construct the argument and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-p", "--path", required = True,    help = "path to image file")
-    ap.add_argument("-ft", "--filetype", required = False,  default = 'jpg', help = "image filetype")
+    ap.add_argument("-p", "--path", required = False, default = '/images/', help = "path to image file")
     args = vars(ap.parse_args())
-    
-    
-    # setting path to model file
-    file_path = args["path"]
-    ext = args['filetype']
 
-    # execute the main pipeline
-    pipeline(file_path)
+   
+    # setting path to cross section image files
+    file_path = args["path"]
     
+   
+    colmap_vsfm_pipeline(file_path)
     

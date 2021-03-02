@@ -1,114 +1,148 @@
-# SFM for 3D root model reconstructure
+# 3D root model reconstruction
 
-### Running With Singularity
-The singularity container is available on [Singularity Hub](https://www.singularity-hub.org)
-and can be run using
-```bash
-singularity exec --overlay file.img shub://lsx1980/vsfm-master [VisualSFM paramaters]
-```
+The software package was integrated as a module at PlantIT website at : https://portnoy.cyverse.org/.
+(Collaborate with Cyverse https://www.cyverse.org/ ) . Users are welcomed to registered as an user to try this package via PlantIT website. 
 
-where [VisualSFM paramaters] are the input parameters for VisualSFM. Using the local examples:
+The software package was also available at Dockerhub (https://hub.docker.com/r/computationalplantscience/3d-model-reconstruction) for advanced users to run locally via singularity at Linux environment: 
 
-### Creat file image for program to store temprary files
-dd if=/dev/zero of=file.img bs=1k count=50000
+This software can be run by docker container, users do not need to install many libraries and compile complex source files. 
+ 
+# Setup Docker container
 
-mkfs -t ext3 file.img
+OS requirements
 
-or
+    To install Docker container (https://docs.docker.com/engine/install/ubuntu/): 
 
-singularity image.create --size 50 file.img
+    To install Docker Engine, you need the 64-bit version of one of these Ubuntu versions:
 
-```bash
-singularity exec --overlay file.img shub://lsx1980/vsfm-master /opt/code/vsfm/bin/VisualSFM sfm+pairs /$root/$path_to_your_pairlist_file/
-```
+    Ubuntu Groovy 20.10
+    Ubuntu Focal 20.04 (LTS)
+    Ubuntu Bionic 18.04 (LTS)
+    Ubuntu Xenial 16.04 (LTS)
 
-```bash
-singularity exec --overlay file.img shub://lsx1980/vsfm-master /opt/code/vsfm/bin/VisualSFM sfm+pmvs /$root/$path_to_your_image_file_folder/
-```
+    Docker Engine is supported on x86_64 (or amd64), armhf, and arm64 architectures.
 
-## Compiling
+    Uninstall old versions
+    $ sudo apt-get remove docker docker-engine docker.io containerd runc
 
-### Required Dependencies
-GTK toolkit development files, freeglut development files, libdevil development
-files.
+    Set up the repository
 
-On Ubuntu:
+    Update the apt package index and install packages to allow apt to use a repository over HTTPS:
 
-```bash
-apt update
-  apt install -y \
-      wget \
-      build-essential \
-      unzip \
-      glew-utils \
-      imagemagick \
-      libgtk2.0-dev \
-      libglew-dev \
-      libdevil-dev \
-      libboost-all-dev \
-      libatlas-cpp-0.6-dev \
-      libatlas-dev \
-      libatlas-base-dev \
-      liblapack3 \
-      libblas3 \
-      libblas-dev \
-      libcminpack-dev \
-      libgfortran3 \
-      libmetis-edf-dev \
-      libparmetis-dev \
-      libjpeg-turbo8 \
-      libgsl-dev \
-      freeglut3-dev
-```
+    $ sudo apt-get update
 
-### Building
+    $ sudo apt-get install \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg-agent \
+        software-properties-common
 
-#### Locally
-The included Makefile will download and compile the necessary components not included in "Required Dependencies".
+    Add Docker’s official GPG key:
 
-```bash
-make all
-```
+    $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 
-#### Singulairty
-The singularity container can be built using
+    Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
 
-```bash
-singularity build --writable vsfm.img Singularity
-```
+    $ sudo apt-key fingerprint 0EBFCD88
 
-Then run using
+    pub   rsa4096 2017-02-22 [SCEA]
+          9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+    uid           [ unknown] Docker Release (CE deb) <docker@docker.com>
+    sub   rsa4096 2017-02-22 [S]
 
-```bash
-singularity exec --writable vsfm.img /opt/code/vsfm/bin/VisualSFM  sfm+pmvs /$root/$path_to_your_image_file_folder/
-```
+    $ sudo add-apt-repository \
+       "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+       $(lsb_release -cs) \
+       stable"
 
-## Running Locally
-```bash
-./opt/code/vsfm/bin/VisualSFM sfm+pairs /$root/$path_to_your_pairlist_file/
-```
+    Update the apt package index, and install the latest version of Docker Engine and containerd, or go to the next step to install a specific version:
 
-```bash
-./opt/code/vsfm/bin/VisualSFM sfm+pmvs /$root/$path_to_your_image_file_folder/
-```
+    $ sudo apt-get update
+    $ sudo apt-get install docker-ce docker-ce-cli containerd.io
 
-## Author
-suxing liu(suxingliu@gmail.com)
-reference:
-[Anders Damsgaard](mailto:adamsgaard@ucsd.edu) with contributions by Caleb Adams
-and Connor P Doherty.
-Changchang Wu ( wucc1130@gmail.com )
+    Verify that Docker Engine is installed correctly by running the hello-world image.
 
-Singularity container maintained by [Chris Cotter](http://github.com/cottersci).
+    $ sudo docker run hello-world
+    
+# Run this container by building it locally:
 
-Singularity container overlay issue solved by [Saravanaraj Ayyampalayam] (https://github.com/raj76) (mailto:raj76@uga.edu)
+    # Clone source code to your local path
+    $ git clone https://github.com/Computational-Plant-Science/3D_model_reconstruction_demo.git
+   
+    # Enter into the source code folder named as "cd 3D_model_reconstruction_demo"
+    $ cd 3D_model_reconstruction_demo/
+   
+    # Build docker container locally named as "3d_model_reconstruction" using "Dockerfile" in the same folder, note: docker repository name must be lowercase.
+    $ docker build -t 3d_model_reconstruction -f Dockerfile .
+   
+    # Run the docker container by linking docker container data path to user's image data folder local path
+    # Note: please replace $path_to_image_folder as your local image data folder path, 
+    # Suggest to check your image folder path using "pwd" command
+    # Example: $ docker run -v /home/suxing/example/root_images:/images -it 3d_model_reconstruction
+   
+    $ docker run -v /$path_to_image_folder:/images -it 3d_model_reconstruction
+   
+    # After launch the docker container, run "pipeline.sh" or "pipeline.sh" insider the container
+    $ root@0529cde0b988:/opt/code# ./pipeline.sh
+    or $ root@0529cde0b988:/opt/code# python3 pipeline.py
 
-Special thanks to Chris Cotter building the container recipe for testing and debugging.
+    # Get 3d model result named as "dense.0.ply"
+    # After the container was executed successfully with image data files, user should be able to see output in your command window like this:
+    '''
+    Loading option-0000.ply, 48656 vertices ...
+    Save to /images/dense.nvm ... done
+    Save /images/dense.0.ply ...done
+    ----------------------------------------------------------------
+    '''
+    The 3D model file was in ply format(https://en.wikipedia.org/wiki/PLY_(file_format)), it is located inside your image folder, its name is "dense.0.ply".
+    path = "/$path_to_image_folder/dense.0.ply"
+    
+    To visualize the 3d model file, suggest to install Meshlab(https://www.meshlab.net/) or cloudcompare(https://www.danielgm.net/cc/)
 
-## Todo
-- VisualSFM is built without CUDA acceleration. Add optional GPU build.
-- Add support for CMVS/PMVS2
-- support GPU based SIFT feature matching
 
-## License
-GNU Public License
+# Author
+    suxing liu(suxingliu@gmail.com)
+    Wesley Paul Bonelli(wbonelli@uga.edu)
+    
+    Reference:
+    VisualSFM
+    [Anders Damsgaard](mailto:adamsgaard@ucsd.edu) with contributions by Caleb Adams and Connor P Doherty.
+    Changchang Wu ( wucc1130@gmail.com )
+    + Structure from Motion
+    [1] Changchang Wu, "Towards Linear-time Incremental Structure From Motion", 3DV 2013
+    [2] Changchang Wu, "VisualSFM: A Visual Structure from Motion System", http://ccwu.me/vsfm/, 2011
+    + Bundle Adjustment
+    [3] Changchang Wu, Sameer Agarwal, Brian Curless, and Steven M. Seitz, "Multicore Bundle Adjustment", CVPR 2011   
+    + Feature Detection
+    [4] Changchang Wu, "SiftGPU: A GPU implementation of Scale Invaraint Feature Transform (SIFT)", http://cs.unc.edu/~ccwu/siftgpu, 2007
+
+    COLMAP
+    https://colmap.github.io
+    Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+    @inproceedings{schoenberger2016sfm,
+        author={Sch\"{o}nberger, Johannes Lutz and Frahm, Jan-Michael},
+        title={Structure-from-Motion Revisited},
+        booktitle={Conference on Computer Vision and Pattern Recognition (CVPR)},
+        year={2016},
+    }
+
+    @inproceedings{schoenberger2016mvs,
+        author={Sch\"{o}nberger, Johannes Lutz and Zheng, Enliang and Pollefeys, Marc and Frahm, Jan-Michael},
+        title={Pixelwise View Selection for Unstructured Multi-View Stereo},
+        booktitle={European Conference on Computer Vision (ECCV)},
+        year={2016},
+    }
+
+
+   Docker container was maintained by Wesley Paul Bonelli. it was deployed to Plant IT website by Wesley Paul Bonelli (wbonelli@uga.edu).
+
+   Singularity container overlay issues were solved by [Saravanaraj Ayyampalayam] (https://github.com/raj76) (mailto:raj76@uga.edu)
+
+   Special thanks to Chris Cotter building the container recipe for testing and debugging.
+
+   ## Todo
+   - GPU cuda version container
+
+   ## License
+   GNU Public License
